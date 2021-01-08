@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart' hide Action;
+import 'package:flutter/widgets.dart' hide Action, Page;
 
 import '../redux/redux.dart';
 import '../redux_component/redux_component.dart';
@@ -76,7 +76,9 @@ class DynamicFlowAdapter<T> extends Logic<T> with RecycleContextMixin<T> {
               enhancer: recycleCtx.enhancer,
             ),
           );
-          adapters.add(result.buildAdapter(subCtx));
+
+          /// hack to reduce adapter's rebuilding
+          adapters.add(memoizeListAdapter(result, subCtx));
         } else if (result is AbstractComponent<Object>) {
           adapters.add(ListAdapter((BuildContext buildContext, int _) {
             return result.buildComponent(

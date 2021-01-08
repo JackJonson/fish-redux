@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart' hide Action;
+import 'package:flutter/widgets.dart' hide Action, Page;
 
 import '../redux/basic.dart';
 import 'basic.dart';
@@ -64,10 +64,11 @@ abstract class Component<T> extends Logic<T> implements AbstractComponent<T> {
 
     return protectedWrapper(
       isPureView()
-          ? _PureViweWidget<T>(
-              enhancer.viewEnhance(protectedView, this, store),
-              getter,
-              bus,
+          ? _PureViewWidget<T>(
+              store: store,
+              viewBuilder: enhancer.viewEnhance(protectedView, this, store),
+              getter: getter,
+              bus: bus,
             )
           : ComponentWidget<T>(
               component: this,
@@ -144,16 +145,28 @@ abstract class Component<T> extends Logic<T> implements AbstractComponent<T> {
   }
 }
 
-class _PureViweWidget<T> extends StatelessWidget {
+class _PureViewWidget<T> extends StatelessWidget {
   final ViewBuilder<T> viewBuilder;
   final Get<Object> getter;
   final DispatchBus bus;
+  final Store<Object> store;
 
-  const _PureViweWidget(this.viewBuilder, this.getter, this.bus);
+  const _PureViewWidget({
+    @required this.viewBuilder,
+    @required this.getter,
+    @required this.bus,
+    @required this.store,
+  });
 
   @override
-  Widget build(BuildContext context) =>
-      viewBuilder(getter(), bus.dispatch, PureViweViewService(bus, context));
+  Widget build(BuildContext context) => viewBuilder(
+        getter(),
+        (Action action) {
+          store.dispatch(action);
+          bus.dispatch(action);
+        },
+        PureViewViewService(bus, context),
+      );
 }
 
 class ComponentWidget<T> extends StatefulWidget {

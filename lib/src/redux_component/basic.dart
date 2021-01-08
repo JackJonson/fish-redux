@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart' hide Action;
+import 'package:flutter/widgets.dart' hide Action, Page;
 
 import '../redux/redux.dart';
 import 'auto_dispose.dart';
@@ -44,7 +44,7 @@ abstract class ViewUpdater<T> {
 
 /// A little different with Dispatch (with if it is interrupted).
 /// bool for sync-functions, interrupted if true
-/// Futur<void> for async-functions, should always be interrupted.
+/// Future<void> for async-functions, should always be interrupted.
 // typedef OnAction = Dispatch;
 
 /// Predicate if a component should be updated when the store is changed.
@@ -52,7 +52,7 @@ typedef ShouldUpdate<T> = bool Function(T old, T now);
 
 /// Interrupt if not null not false
 /// bool for sync-functions, interrupted if true
-/// Futur<void> for async-functions, should always be interrupted.
+/// Future<void> for async-functions, should always be interrupted.
 typedef Effect<T> = dynamic Function(Action action, Context<T> ctx);
 
 /// AOP on view
@@ -161,7 +161,7 @@ abstract class ViewService implements ExtraData {
   ListAdapter buildAdapter();
 
   /// The way to build slot component which is configured in Dependencies.slots
-  Widget buildComponent(String name,{Widget defaultWidget});
+  Widget buildComponent(String name, {Widget defaultWidget});
 
   /// Get BuildContext from the host-widget
   BuildContext get context;
@@ -239,8 +239,12 @@ abstract class ContextSys<T> extends Context<T> implements ViewService {
   DispatchBus get bus;
 }
 
+abstract class AbstractAdapterBuilder<T> {
+  ListAdapter buildAdapter(ContextSys<T> ctx);
+}
+
 /// Representation of each dependency
-abstract class Dependent<T> {
+abstract class Dependent<T> implements AbstractAdapterBuilder<Object> {
   Get<Object> subGetter(Get<T> getter);
 
   SubReducer<T> createSubReducer();
@@ -251,9 +255,6 @@ abstract class Dependent<T> {
     @required DispatchBus bus,
     @required Enhancer<Object> enhancer,
   });
-
-  /// P state
-  ListAdapter buildAdapter(ContextSys<Object> ctx);
 
   ContextSys<Object> createContext(
     Store<Object> store,
@@ -322,9 +323,8 @@ abstract class AbstractComponent<T> implements AbstractLogic<T> {
   });
 }
 
-abstract class AbstractAdapter<T> implements AbstractLogic<T> {
-  ListAdapter buildAdapter(ContextSys<T> ctx);
-}
+abstract class AbstractAdapter<T>
+    implements AbstractLogic<T>, AbstractAdapterBuilder<T> {}
 
 /// Because a main reducer will be very complicated with multiple level's state.
 /// When a reducer is slow to handle an action, maybe we should use ReducerFilter to improve the performance.
